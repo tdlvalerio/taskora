@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
+import { getWorkspaceProjects } from "@/services/project.service";
 import { getWorkspaceMembership } from "@/services/workspace.service";
 
 export default async function WorkspacePage({
@@ -24,6 +25,8 @@ export default async function WorkspacePage({
   }
 
   const { workspace, role } = membership;
+  const projects = await getWorkspaceProjects(workspace.id);
+  const newProjectHref = `/workspaces/${workspace.slug}/projects/new`;
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
@@ -40,12 +43,7 @@ export default async function WorkspacePage({
 
           <nav className="mt-8 space-y-1 text-sm">
             <span className="block rounded-md bg-zinc-100 px-3 py-2 font-medium">
-              Overview
-            </span>
-
-            <span className="flex items-center justify-between rounded-md px-3 py-2 text-zinc-400">
               Projects
-              <span className="text-[11px]">Soon</span>
             </span>
           </nav>
         </aside>
@@ -65,13 +63,57 @@ export default async function WorkspacePage({
             </span>
           </div>
 
-          <div className="mt-10 rounded-xl border border-dashed border-zinc-300 px-6 py-16 text-center">
-            <h2 className="font-semibold">No projects yet</h2>
+          <section className="mt-10">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-sm font-medium text-zinc-500">Projects</h2>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-              Projects for this workspace will appear here.
-            </p>
-          </div>
+              {projects.length > 0 && (
+                <Link
+                  href={newProjectHref}
+                  className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                >
+                  Create project
+                </Link>
+              )}
+            </div>
+
+            {projects.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-dashed border-zinc-300 px-6 py-16 text-center">
+                <h3 className="font-semibold">No projects yet</h3>
+
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+                  Projects group related work in this workspace. Create the
+                  first one to get started.
+                </p>
+
+                <Link
+                  href={newProjectHref}
+                  className="mt-6 inline-block rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                >
+                  Create project
+                </Link>
+              </div>
+            ) : (
+              <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+                {projects.map((project) => (
+                  <li key={project.id}>
+                    <Link
+                      href={`/workspaces/${workspace.slug}/projects/${project.slug}`}
+                      className="block h-full rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300 hover:shadow"
+                    >
+                      <p className="font-semibold">{project.name}</p>
+
+                      {project.description && (
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-zinc-600">
+                          {project.description}
+                        </p>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </main>
       </div>
     </div>

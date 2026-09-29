@@ -1,22 +1,9 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { pickAvailableSlug, slugify } from "@/lib/slug";
 import type { CreateWorkspaceInput } from "@/lib/validations/workspace";
 
-// Slugs that would be shadowed by static routes under /workspaces.
-const RESERVED_SLUGS = new Set(["new"]);
-
 const MAX_CREATE_ATTEMPTS = 3;
-
-function slugify(name: string) {
-  const slug = name
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || "workspace";
-}
 
 async function findAvailableSlug(baseSlug: string) {
   const existing = await prisma.workspace.findMany({
@@ -30,24 +17,17 @@ async function findAvailableSlug(baseSlug: string) {
     },
   });
 
-  const takenSlugs = new Set(existing.map((workspace) => workspace.slug));
-
-  let slug = baseSlug;
-  let suffix = 2;
-
-  while (takenSlugs.has(slug) || RESERVED_SLUGS.has(slug)) {
-    slug = `${baseSlug}-${suffix}`;
-    suffix++;
-  }
-
-  return slug;
+  return pickAvailableSlug(
+    baseSlug,
+    existing.map((workspace) => workspace.slug),
+  );
 }
 
 export async function createWorkspace(
   userId: string,
   input: CreateWorkspaceInput,
 ) {
-  const baseSlug = slugify(input.name);
+  const baseSlug = slugify(input.name, "workspace");
 
   for (let attempt = 1; attempt <= MAX_CREATE_ATTEMPTS; attempt++) {
     const slug = await findAvailableSlug(baseSlug);
