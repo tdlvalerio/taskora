@@ -1,0 +1,49 @@
+import { NextResponse } from "next/server";
+
+import { createSession } from "@/lib/session";
+import { loginSchema } from "@/lib/validations/auth";
+import { verifyCredentials } from "@/services/auth.service";
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const result = loginSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: "VALIDATION_ERROR",
+          fields: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const user = await verifyCredentials(result.data);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "INVALID_CREDENTIALS",
+          message: "Incorrect email or password.",
+        },
+        { status: 401 },
+      );
+    }
+
+    await createSession(user.id, result.data.remember);
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error("Login failed:", error);
+
+    return NextResponse.json(
+      {
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Unable to log you in.",
+      },
+      { status: 500 },
+    );
+  }
+}
