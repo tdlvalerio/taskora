@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, use, useState } from "react";
 
 import { AuthShell } from "@/components/auth-shell";
+import { getSafeRedirectPath } from "@/lib/redirect";
 
 type FieldErrors = {
   name?: string[];
@@ -14,7 +15,17 @@ type FieldErrors = {
   terms?: string[];
 };
 
-export default function SignupPage() {
+export default function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const redirectPath = getSafeRedirectPath(use(searchParams).next);
+  const nextQuery =
+    redirectPath === "/dashboard"
+      ? ""
+      : `?next=${encodeURIComponent(redirectPath)}`;
+
   const router = useRouter();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
@@ -65,7 +76,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(redirectPath);
     } catch {
       setFormError(
         "Something went wrong while creating your account. Please try again.",
@@ -83,7 +94,7 @@ export default function SignupPage() {
         <>
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={`/login${nextQuery}`}
             className="font-medium text-zinc-950 hover:underline"
           >
             Log in

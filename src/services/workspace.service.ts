@@ -95,6 +95,27 @@ export async function getUserWorkspaces(userId: string) {
   });
 }
 
+export async function getWorkspaceMembers(workspaceId: string) {
+  return prisma.workspaceMember.findMany({
+    where: {
+      workspaceId,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    select: {
+      id: true,
+      role: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+}
+
 // Returns null both when the workspace doesn't exist and when the user isn't
 // a member, so callers can't reveal which workspaces exist.
 export async function getWorkspaceMembership(userId: string, slug: string) {

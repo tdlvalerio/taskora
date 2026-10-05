@@ -45,6 +45,13 @@ export default async function WorkspacePage({
             <span className="block rounded-md bg-zinc-100 px-3 py-2 font-medium">
               Projects
             </span>
+
+            <Link
+              href={`/workspaces/${workspace.slug}/members`}
+              className="block rounded-md px-3 py-2 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950"
+            >
+              Members
+            </Link>
           </nav>
         </aside>
 

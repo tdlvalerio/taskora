@@ -46,8 +46,9 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members  WorkspaceMember[]
-  projects Project[]
+  members     WorkspaceMember[]
+  projects    Project[]
+  invitations WorkspaceInvitation[]
 
   @@map("workspaces")
 }
@@ -65,6 +66,21 @@ model WorkspaceMember {
   @@unique([userId, workspaceId])
   @@index([workspaceId])
   @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  email       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@map("workspace_invitations")
 }
 
 model Project {

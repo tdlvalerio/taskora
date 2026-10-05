@@ -2,16 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, use, useState } from "react";
 
 import { AuthShell } from "@/components/auth-shell";
+import { getSafeRedirectPath } from "@/lib/redirect";
 
 type FieldErrors = {
   email?: string[];
   password?: string[];
 };
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const redirectPath = getSafeRedirectPath(use(searchParams).next);
+  const nextQuery =
+    redirectPath === "/dashboard"
+      ? ""
+      : `?next=${encodeURIComponent(redirectPath)}`;
+
   const router = useRouter();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
@@ -53,7 +64,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(redirectPath);
     } catch {
       setFormError("Something went wrong while logging in. Please try again.");
     } finally {
@@ -69,7 +80,7 @@ export default function LoginPage() {
         <>
           New to Taskora?{" "}
           <Link
-            href="/signup"
+            href={`/signup${nextQuery}`}
             className="font-medium text-zinc-950 hover:underline"
           >
             Create an account

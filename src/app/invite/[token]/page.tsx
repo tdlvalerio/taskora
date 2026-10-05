@@ -1,0 +1,127 @@
+import Link from "next/link";
+
+import { AuthShell } from "@/components/auth-shell";
+import { getCurrentUser } from "@/lib/session";
+import { getInvitationByToken } from "@/services/invitation.service";
+import { getWorkspaceMembership } from "@/services/workspace.service";
+
+import { AcceptInvitationButton } from "./accept-invitation-button";
+
+const linkButtonClass =
+  "block w-full rounded-lg bg-zinc-950 px-4 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800";
+
+export default async function InvitePage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  const user = await getCurrentUser();
+
+  // Signed-out visitors get no details about the invitation. Only a signed-in
+  // account with the invited email should learn which workspace it's for.
+  if (!user) {
+    const next = encodeURIComponent(`/invite/${token}`);
+
+    return (
+      <AuthShell
+        title="You've been invited"
+        description="Log in or create an account using the email address this invitation was sent to."
+        footer="You'll come back to this invitation afterwards."
+      >
+        <div className="space-y-3">
+          <Link href={`/login?next=${next}`} className={linkButtonClass}>
+            Log in
+          </Link>
+
+          <Link
+            href={`/signup?next=${next}`}
+            className="block w-full rounded-lg border border-zinc-300 px-4 py-3 text-center text-sm font-medium transition hover:bg-zinc-50"
+          >
+            Create an account
+          </Link>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  const invitation = await getInvitationByToken(token);
+  const footer = `Signed in as ${user.email}`;
+
+  if (!invitation) {
+    return (
+      <AuthShell
+        title="Invitation not found"
+        description="This invitation link is invalid. Ask the workspace owner for a new one."
+        footer={footer}
+      >
+        <Link href="/dashboard" className={linkButtonClass}>
+          Go to dashboard
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  if (invitation.email !== user.email) {
+    return (
+      <AuthShell
+        title="Wrong account"
+        description="This invitation was sent to a different email address. Log in with that account to accept it."
+        footer={footer}
+      >
+        <Link href="/dashboard" className={linkButtonClass}>
+          Go to dashboard
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  const { workspace } = invitation;
+
+  if (invitation.acceptedAt) {
+    const membership = await getWorkspaceMembership(user.id, workspace.slug);
+
+    return (
+      <AuthShell
+        title={membership ? "You're already a member" : "Invitation already used"}
+        description={
+          membership
+            ? `You already have access to ${workspace.name}.`
+            : "This invitation has already been used. Ask the workspace owner for a new one."
+        }
+        footer={footer}
+      >
+        <Link
+          href={membership ? `/workspaces/${workspace.slug}` : "/dashboard"}
+          className={linkButtonClass}
+        >
+          {membership ? `Go to ${workspace.name}` : "Go to dashboard"}
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  if (invitation.expiresAt <= new Date()) {
+    return (
+      <AuthShell
+        title="Invitation expired"
+        description="This invitation has expired. Ask the workspace owner for a new one."
+        footer={footer}
+      >
+        <Link href="/dashboard" className={linkButtonClass}>
+          Go to dashboard
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell
+      title={`Join ${workspace.name}`}
+      description="You've been invited to join this workspace as a member."
+      footer={footer}
+    >
+      <AcceptInvitationButton token={token} />
+    </AuthShell>
+  );
+}

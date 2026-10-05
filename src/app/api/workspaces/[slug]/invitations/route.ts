@@ -1,0 +1,98 @@
+import { NextResponse } from "next/server";
+
+import { getCurrentUser } from "@/lib/session";
+import { createInvitationSchema } from "@/lib/validations/invitation";
+import { createWorkspaceInvitation } from "@/services/invitation.service";
+import { getWorkspaceMembership } from "@/services/workspace.service";
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "UNAUTHORIZED",
+          message: "You need to log in to invite members.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const { slug } = await params;
+    const membership = await getWorkspaceMembership(user.id, slug);
+
+    if (!membership) {
+      return NextResponse.json(
+        {
+          error: "NOT_FOUND",
+          message: "Workspace not found.",
+        },
+        { status: 404 },
+      );
+    }
+
+    if (membership.role !== "OWNER") {
+      return NextResponse.json(
+        {
+          error: "FORBIDDEN",
+          message: "Only the workspace owner can invite members.",
+        },
+        { status: 403 },
+      );
+    }
+
+    const body = await request.json();
+
+    const result = createInvitationSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: "VALIDATION_ERROR",
+          fields: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const invitation = await createWorkspaceInvitation(
+      membership.workspace.id,
+      result.data.email,
+    );
+
+    return NextResponse.json(
+      {
+        invitation: {
+          email: invitation.email,
+          expiresAt: invitation.expiresAt,
+          url: new URL(`/invite/${invitation.token}`, request.url).toString(),
+        },
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === "ALREADY_MEMBER") {
+      return NextResponse.json(
+        {
+          error: "ALREADY_MEMBER",
+          message: "This person is already a member of the workspace.",
+        },
+        { status: 409 },
+      );
+    }
+
+    console.error("Invitation creation failed:", error);
+
+    return NextResponse.json(
+      {
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Unable to create the invitation.",
+      },
+      { status: 500 },
+    );
+  }
+}
