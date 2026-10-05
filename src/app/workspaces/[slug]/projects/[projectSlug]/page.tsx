@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
+import { formatDueDate, TASK_STATUS_LABELS } from "@/lib/task";
 import { getWorkspaceProject } from "@/services/project.service";
+import { getProjectTasks } from "@/services/task.service";
 
 export default async function ProjectPage({
   params,
@@ -24,6 +26,8 @@ export default async function ProjectPage({
   }
 
   const { workspace } = project;
+  const tasks = await getProjectTasks(project.id);
+  const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
@@ -55,13 +59,71 @@ export default async function ProjectPage({
           </p>
         )}
 
-        <div className="mt-10 rounded-xl border border-dashed border-zinc-300 px-6 py-16 text-center">
-          <h2 className="font-semibold">No tasks yet</h2>
+        <section className="mt-10">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-sm font-medium text-zinc-500">Tasks</h2>
 
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-            Tasks for this project will live here.
-          </p>
-        </div>
+            {tasks.length > 0 && (
+              <Link
+                href={`${projectHref}/tasks/new`}
+                className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              >
+                Create task
+              </Link>
+            )}
+          </div>
+
+          {tasks.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed border-zinc-300 px-6 py-16 text-center">
+              <h3 className="font-semibold">No tasks yet</h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+                Break this project into tasks so everyone knows what needs to
+                happen next.
+              </p>
+
+              <Link
+                href={`${projectHref}/tasks/new`}
+                className="mt-6 inline-block rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              >
+                Create task
+              </Link>
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200">
+              {tasks.map((task) => (
+                <li key={task.id}>
+                  <Link
+                    href={`${projectHref}/tasks/${task.id}`}
+                    className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-zinc-50"
+                  >
+                    <span
+                      className={`text-sm font-medium ${
+                        task.status === "DONE"
+                          ? "text-zinc-400 line-through"
+                          : ""
+                      }`}
+                    >
+                      {task.title}
+                    </span>
+
+                    <span className="flex shrink-0 items-center gap-3">
+                      {task.dueDate && (
+                        <span className="text-xs text-zinc-500">
+                          Due {formatDueDate(task.dueDate)}
+                        </span>
+                      )}
+
+                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-600">
+                        {TASK_STATUS_LABELS[task.status]}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
