@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { TaskStatus } from "@/generated/prisma/enums";
 
-export const createTaskSchema = z.object({
+const taskDetailsShape = {
   title: z
     .string()
     .trim()
@@ -25,9 +25,18 @@ export const createTaskSchema = z.object({
     .transform((dueDate) => dueDate || null)
     .pipe(z.iso.date("Enter a valid due date.").nullable())
     .transform((dueDate) => (dueDate ? new Date(dueDate) : null)),
-});
+};
+
+export const createTaskSchema = z.object(taskDetailsShape);
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+// Strict so a request that includes status, assigneeId, or internal fields is
+// rejected instead of having those fields silently dropped. A missing
+// description or due date clears it, because the form always sends all three.
+export const updateTaskSchema = z.strictObject(taskDetailsShape);
+
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
 export const updateTaskStatusSchema = z.object({
   status: z.enum(TaskStatus, "Choose a valid status."),

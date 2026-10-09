@@ -8,6 +8,7 @@ import { getProjectTask } from "@/services/task.service";
 import { getWorkspaceMembers } from "@/services/workspace.service";
 
 import { TaskAssigneeSelect } from "./task-assignee-select";
+import { TaskDetails } from "./task-details";
 import { TaskStatusSelect } from "./task-status-select";
 
 export default async function TaskPage({
@@ -34,6 +35,12 @@ export default async function TaskPage({
   const taskUrl = `${projectHref}/tasks/${task.id}`;
   const members = await getWorkspaceMembers(workspace.id);
 
+  // Due dates are stored at midnight UTC, so the UTC date part is the saved
+  // calendar date in the YYYY-MM-DD form a date input expects.
+  const dueDateValue = task.dueDate
+    ? task.dueDate.toISOString().slice(0, 10)
+    : null;
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <SiteHeader />
@@ -57,19 +64,13 @@ export default async function TaskPage({
         </nav>
 
         <div className="mt-6 grid gap-10 md:grid-cols-[1fr_240px]">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {task.title}
-            </h1>
-
-            {task.description ? (
-              <p className="mt-4 whitespace-pre-line text-sm leading-6 text-zinc-700">
-                {task.description}
-              </p>
-            ) : (
-              <p className="mt-4 text-sm text-zinc-500">No description.</p>
-            )}
-          </div>
+          <TaskDetails
+            taskUrl={taskUrl}
+            projectHref={projectHref}
+            title={task.title}
+            description={task.description}
+            dueDate={dueDateValue}
+          />
 
           <aside className="space-y-6 rounded-xl border border-zinc-200 p-5">
             <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />

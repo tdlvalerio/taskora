@@ -1,7 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
-import type { CreateTaskInput } from "@/lib/validations/task";
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+} from "@/lib/validations/task";
 
 export async function createTask(projectId: string, input: CreateTaskInput) {
   return prisma.task.create({
@@ -129,6 +132,72 @@ export async function updateTaskStatus(
   }
 
   return { id: taskId, status };
+}
+
+// Same scoped updateMany approach as updateTaskStatus. Only title, description,
+// and due date are written, so status and assignee are left as they are.
+export async function updateTask(
+  userId: string,
+  workspaceSlug: string,
+  projectSlug: string,
+  taskId: string,
+  input: UpdateTaskInput,
+) {
+  const result = await prisma.task.updateMany({
+    where: {
+      id: taskId,
+      project: {
+        slug: projectSlug,
+        workspace: {
+          slug: workspaceSlug,
+          members: {
+            some: {
+              userId,
+            },
+          },
+        },
+      },
+    },
+    data: {
+      title: input.title,
+      description: input.description,
+      dueDate: input.dueDate,
+    },
+  });
+
+  if (result.count === 0) {
+    return null;
+  }
+
+  return { id: taskId };
+}
+
+// Scoped the same way as updates. A count of 0 covers missing, inaccessible,
+// and already-deleted tasks, so repeated delete requests are harmless.
+export async function deleteTask(
+  userId: string,
+  workspaceSlug: string,
+  projectSlug: string,
+  taskId: string,
+) {
+  const result = await prisma.task.deleteMany({
+    where: {
+      id: taskId,
+      project: {
+        slug: projectSlug,
+        workspace: {
+          slug: workspaceSlug,
+          members: {
+            some: {
+              userId,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return result.count > 0;
 }
 
 type UpdateTaskAssigneeResult =
