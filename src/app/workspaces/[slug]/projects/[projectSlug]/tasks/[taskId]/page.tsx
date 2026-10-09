@@ -4,10 +4,12 @@ import { notFound, redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
 import { formatDueDate } from "@/lib/task";
+import { getTaskComments } from "@/services/comment.service";
 import { getProjectTask } from "@/services/task.service";
 import { getWorkspaceMembers } from "@/services/workspace.service";
 
 import { TaskAssigneeSelect } from "./task-assignee-select";
+import { TaskComments } from "./task-comments";
 import { TaskDetails } from "./task-details";
 import { TaskStatusSelect } from "./task-status-select";
 
@@ -33,7 +35,10 @@ export default async function TaskPage({
   const { workspace } = project;
   const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
   const taskUrl = `${projectHref}/tasks/${task.id}`;
-  const members = await getWorkspaceMembers(workspace.id);
+  const [members, comments] = await Promise.all([
+    getWorkspaceMembers(workspace.id),
+    getTaskComments(task.id),
+  ]);
 
   // Due dates are stored at midnight UTC, so the UTC date part is the saved
   // calendar date in the YYYY-MM-DD form a date input expects.
@@ -64,13 +69,26 @@ export default async function TaskPage({
         </nav>
 
         <div className="mt-6 grid gap-10 md:grid-cols-[1fr_240px]">
-          <TaskDetails
-            taskUrl={taskUrl}
-            projectHref={projectHref}
-            title={task.title}
-            description={task.description}
-            dueDate={dueDateValue}
-          />
+          <div>
+            <TaskDetails
+              taskUrl={taskUrl}
+              projectHref={projectHref}
+              title={task.title}
+              description={task.description}
+              dueDate={dueDateValue}
+            />
+
+            <TaskComments
+              taskUrl={taskUrl}
+              comments={comments.map((comment) => ({
+                id: comment.id,
+                body: comment.body,
+                authorName: comment.author.name || comment.author.email,
+                createdAt: comment.createdAt.toISOString(),
+                isOwn: comment.authorId === user.id,
+              }))}
+            />
+          </div>
 
           <aside className="space-y-6 rounded-xl border border-zinc-200 p-5">
             <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
