@@ -99,6 +99,9 @@ export default async function ProjectPage({
                 title: task.title,
                 status: task.status,
                 dueDate: task.dueDate ? formatDueDate(task.dueDate) : null,
+                assigneeName: task.assignee
+                  ? task.assignee.user.name || task.assignee.user.email
+                  : null,
               }))}
             />
           )}

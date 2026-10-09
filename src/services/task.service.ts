@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import type { CreateTaskInput } from "@/lib/validations/task";
@@ -31,6 +32,16 @@ export async function getProjectTasks(projectId: string) {
       title: true,
       status: true,
       dueDate: true,
+      assignee: {
+        select: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
     },
   });
 }
@@ -65,12 +76,14 @@ export async function getProjectTask(
       description: true,
       status: true,
       dueDate: true,
+      assigneeId: true,
       project: {
         select: {
           name: true,
           slug: true,
           workspace: {
             select: {
+              id: true,
               name: true,
               slug: true,
             },
@@ -116,4 +129,55 @@ export async function updateTaskStatus(
   }
 
   return { id: taskId, status };
+}
+
+type UpdateTaskAssigneeResult =
+  | { ok: true; task: { id: string; assigneeId: string | null } }
+  | { ok: false; error: "NOT_FOUND" | "INVALID_ASSIGNEE" };
+
+export async function updateTaskAssignee(
+  userId: string,
+  workspaceSlug: string,
+  projectSlug: string,
+  taskId: string,
+  assigneeId: string | null,
+): Promise<UpdateTaskAssigneeResult> {
+  const workspaceConditions: Prisma.WorkspaceWhereInput[] = [
+    { members: { some: { userId } } },
+  ];
+
+  // The assignee must be a member of the task's own workspace. Checking it in
+  // the update's WHERE clause makes the membership check and the write a
+  // single statement, so there's no gap between checking and writing.
+  if (assigneeId) {
+    workspaceConditions.push({ members: { some: { id: assigneeId } } });
+  }
+
+  const result = await prisma.task.updateMany({
+    where: {
+      id: taskId,
+      project: {
+        slug: projectSlug,
+        workspace: {
+          slug: workspaceSlug,
+          AND: workspaceConditions,
+        },
+      },
+    },
+    data: {
+      assigneeId,
+    },
+  });
+
+  if (result.count > 0) {
+    return { ok: true, task: { id: taskId, assigneeId } };
+  }
+
+  // Nothing matched, so work out which response to give. This read only
+  // picks the error; it doesn't authorize anything.
+  const task = assigneeId
+    ? await getProjectTask(userId, workspaceSlug, projectSlug, taskId)
+    : null;
+
+  return { ok: false, error: task ? "INVALID_ASSIGNEE" : "NOT_FOUND" };
 }

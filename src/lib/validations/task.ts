@@ -32,3 +32,7 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export const updateTaskStatusSchema = z.object({
   status: z.enum(TaskStatus, "Choose a valid status."),
 });
+
+export const updateTaskAssigneeSchema = z.object({
+  assigneeId: z.string().min(1, "Choose a valid assignee.").nullable(),
+});

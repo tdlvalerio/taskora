@@ -12,6 +12,7 @@ type BoardTask = {
   title: string;
   status: TaskStatus;
   dueDate: string | null;
+  assigneeName: string | null;
 };
 
 type KanbanBoardProps = {
@@ -125,11 +126,15 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
                       {task.title}
                     </Link>
 
-                    {task.dueDate && (
-                      <p className="mt-2 text-xs text-zinc-500">
-                        Due {task.dueDate}
-                      </p>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-zinc-500">
+                      <span
+                        className={task.assigneeName ? "text-zinc-700" : ""}
+                      >
+                        {task.assigneeName ?? "Unassigned"}
+                      </span>
+
+                      {task.dueDate && <span>Due {task.dueDate}</span>}
+                    </div>
 
                     <select
                       aria-label={`Status for ${task.title}`}

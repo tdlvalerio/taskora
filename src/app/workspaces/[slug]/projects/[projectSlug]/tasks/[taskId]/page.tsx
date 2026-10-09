@@ -5,7 +5,9 @@ import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
 import { formatDueDate } from "@/lib/task";
 import { getProjectTask } from "@/services/task.service";
+import { getWorkspaceMembers } from "@/services/workspace.service";
 
+import { TaskAssigneeSelect } from "./task-assignee-select";
 import { TaskStatusSelect } from "./task-status-select";
 
 export default async function TaskPage({
@@ -29,6 +31,8 @@ export default async function TaskPage({
   const { project } = task;
   const { workspace } = project;
   const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
+  const taskUrl = `${projectHref}/tasks/${task.id}`;
+  const members = await getWorkspaceMembers(workspace.id);
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
@@ -68,9 +72,15 @@ export default async function TaskPage({
           </div>
 
           <aside className="space-y-6 rounded-xl border border-zinc-200 p-5">
-            <TaskStatusSelect
-              taskUrl={`${projectHref}/tasks/${task.id}`}
-              initialStatus={task.status}
+            <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
+
+            <TaskAssigneeSelect
+              taskUrl={taskUrl}
+              assigneeId={task.assigneeId}
+              members={members.map((member) => ({
+                id: member.id,
+                label: member.user.name || member.user.email,
+              }))}
             />
 
             <div>
