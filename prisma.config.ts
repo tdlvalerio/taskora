@@ -10,7 +10,11 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   engine: "classic",
+  // The app connects through DATABASE_URL, which can be a pooled connection in
+  // production. Migrations need a direct connection, so the CLI uses
+  // DIRECT_URL when it's set. Locally it can be left unset.
   datasource: {
     url: env("DATABASE_URL"),
+    directUrl: process.env.DIRECT_URL || undefined,
   },
 });

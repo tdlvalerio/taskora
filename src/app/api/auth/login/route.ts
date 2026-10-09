@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
 
+import { isTrustedOrigin } from "@/lib/origin";
 import { createSession } from "@/lib/session";
 import { loginSchema } from "@/lib/validations/auth";
 import { verifyCredentials } from "@/services/auth.service";
 
 export async function POST(request: Request) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json(
+        {
+          error: "FORBIDDEN",
+          message: "This request came from an untrusted origin.",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
 
     const result = loginSchema.safeParse(body);
