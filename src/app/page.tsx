@@ -4,34 +4,34 @@ import { SiteHeader } from "@/components/site-header";
 
 const features = [
   {
+    title: "Workspaces",
+    description:
+      "Give each team its own workspace, with its own members and projects kept separate from everyone else's.",
+  },
+  {
+    title: "Workspace invitations",
+    description:
+      "Invite teammates with a link that only works for the email address it was created for.",
+  },
+  {
     title: "Projects",
     description:
-      "Keep tasks, deadlines, and project activity organized in one shared workspace.",
+      "Group related tasks into projects so each piece of work has a clear home.",
   },
   {
     title: "Kanban boards",
     description:
-      "Move work through clear stages and see exactly where every task stands.",
+      "Move tasks between To do, In progress, and Done, and see exactly where every task stands.",
   },
   {
-    title: "Team collaboration",
+    title: "Assignments and due dates",
     description:
-      "Assign work, discuss tasks, and keep conversations connected to the work itself.",
+      "Give every task an owner from your workspace and a date it needs to be finished by.",
   },
   {
-    title: "Task ownership",
+    title: "Task comments",
     description:
-      "Give every task an owner, priority, due date, and clear definition of what needs to happen.",
-  },
-  {
-    title: "Activity history",
-    description:
-      "See how work changes over time without digging through messages or asking for updates.",
-  },
-  {
-    title: "Workspace insights",
-    description:
-      "Understand project progress, workload, and what needs attention across your team.",
+      "Discuss the work on the task itself, so questions and decisions stay with the work.",
   },
 ];
 
@@ -39,22 +39,22 @@ const boardColumns = [
   {
     title: "To do",
     tasks: [
-      { title: "Finalize onboarding flow", tag: "Product" },
-      { title: "Write API documentation", tag: "Engineering" },
+      { title: "Finalize onboarding flow", assignee: "Alex", due: "Oct 14" },
+      { title: "Write API documentation", assignee: "Jamie", due: "Oct 18" },
     ],
   },
   {
     title: "In progress",
     tasks: [
-      { title: "Build analytics dashboard", tag: "Engineering" },
-      { title: "Review homepage copy", tag: "Marketing" },
+      { title: "Launch pricing page", assignee: "Theodore", due: "Oct 12" },
+      { title: "Review homepage copy", assignee: "Alex", due: "Oct 10" },
     ],
   },
   {
     title: "Done",
     tasks: [
-      { title: "Create project workspace", tag: "Product" },
-      { title: "Set up design system", tag: "Design" },
+      { title: "Create project workspace", assignee: "Theodore", due: "Oct 2" },
+      { title: "Set up design system", assignee: "Jamie", due: "Oct 6" },
     ],
   },
 ];
@@ -140,12 +140,9 @@ export default function Home() {
                       >
                         <p className="text-sm font-medium">{task.title}</p>
 
-                        <div className="mt-4 flex items-center justify-between">
-                          <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] text-zinc-600">
-                            {task.tag}
-                          </span>
-
-                          <div className="h-6 w-6 rounded-full bg-zinc-200" />
+                        <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+                          <span className="text-zinc-700">{task.assignee}</span>
+                          <span>Due {task.due}</span>
                         </div>
                       </div>
                     ))}
@@ -217,7 +214,7 @@ export default function Home() {
                 [
                   "02",
                   "Assign ownership",
-                  "Make responsibilities and priorities visible.",
+                  "Make it clear who is responsible and when it's due.",
                 ],
                 [
                   "03",
@@ -243,25 +240,13 @@ export default function Home() {
 
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs text-zinc-600">
-                    Engineering
-                  </span>
-
-                  <h3 className="mt-4 text-lg font-semibold">
-                    Build analytics dashboard
-                  </h3>
-                </div>
-
-                <span className="rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-500">
-                  High
-                </span>
-              </div>
+              <h3 className="text-lg font-semibold">
+                Launch pricing page
+              </h3>
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
-                Add project progress, task completion, and team workload
-                metrics to the workspace dashboard.
+                Publish the new pricing page and link to it from the site
+                navigation and the signup flow.
               </p>
 
               <div className="mt-6 border-t border-zinc-100 pt-5">
@@ -297,9 +282,9 @@ export default function Home() {
               </h2>
 
               <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-400">
-                Comments, assignments, and activity stay connected to each task,
-                giving your team the context they need without searching
-                through separate conversations.
+                Comments and assignments stay connected to each task, giving
+                your team the context they need without searching through
+                separate conversations.
               </p>
             </div>
 
@@ -316,8 +301,8 @@ export default function Home() {
                   </div>
 
                   <p className="mt-2 text-sm leading-6 text-zinc-300">
-                    The dashboard metrics are ready for review. I also added
-                    the date range filter we discussed yesterday.
+                    The pricing page is ready for review. I also updated the
+                    signup link we discussed yesterday.
                   </p>
                 </div>
               </div>
@@ -336,8 +321,8 @@ export default function Home() {
                   </div>
 
                   <p className="mt-2 text-sm leading-6 text-zinc-300">
-                    Looks good. Let&apos;s move this into review and test it against
-                    a workspace with more project data.
+                    Looks good. I&apos;ll give it one last check and move the
+                    task to Done.
                   </p>
                 </div>
               </div>
