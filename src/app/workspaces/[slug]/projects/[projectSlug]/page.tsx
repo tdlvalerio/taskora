@@ -3,9 +3,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
-import { formatDueDate, TASK_STATUS_LABELS } from "@/lib/task";
+import { formatDueDate } from "@/lib/task";
 import { getWorkspaceProject } from "@/services/project.service";
 import { getProjectTasks } from "@/services/task.service";
+
+import { KanbanBoard } from "./kanban-board";
 
 export default async function ProjectPage({
   params,
@@ -90,38 +92,15 @@ export default async function ProjectPage({
               </Link>
             </div>
           ) : (
-            <ul className="mt-4 divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200">
-              {tasks.map((task) => (
-                <li key={task.id}>
-                  <Link
-                    href={`${projectHref}/tasks/${task.id}`}
-                    className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-zinc-50"
-                  >
-                    <span
-                      className={`text-sm font-medium ${
-                        task.status === "DONE"
-                          ? "text-zinc-400 line-through"
-                          : ""
-                      }`}
-                    >
-                      {task.title}
-                    </span>
-
-                    <span className="flex shrink-0 items-center gap-3">
-                      {task.dueDate && (
-                        <span className="text-xs text-zinc-500">
-                          Due {formatDueDate(task.dueDate)}
-                        </span>
-                      )}
-
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-600">
-                        {TASK_STATUS_LABELS[task.status]}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <KanbanBoard
+              projectHref={projectHref}
+              tasks={tasks.map((task) => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+                dueDate: task.dueDate ? formatDueDate(task.dueDate) : null,
+              }))}
+            />
           )}
         </section>
       </main>
